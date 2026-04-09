@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0d0f12">
+  <title>Tolteca OS — Recapitulación</title>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel+Decorative:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Backdrop del drawer (móvil) -->
+  <div id="sidebarBackdrop"></div>
+
+  <!-- ===== SIDEBAR ===================================== -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-feather-alt header-icon"></i>
+      <span>TOLTECA OS</span>
+    </div>
+
+    <div class="tree-container" id="treeRoot"></div>
+
+    <div class="sidebar-footer">
+      <button class="btn-sidebar btn-sidebar-export" id="btnExport">
+        <i class="fas fa-file-download"></i> Exportar Copia
+      </button>
+      <button class="btn-sidebar btn-sidebar-bg" id="btnSidebarBg">
+        <i class="fas fa-image"></i> Cambiar Fondo Global
+      </button>
+      <button class="btn-sidebar btn-sidebar-reset" id="btnReset">
+        <i class="fas fa-trash"></i> Restablecer de Fábrica
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN PANEL ================================== -->
+  <main id="main">
+
+    <!-- Fondo atmosférico -->
+    <div id="contentBackground"></div>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <button class="btn-hamburger" id="btnToggleSidebar" title="Mostrar/ocultar menú">
+        <i class="fas fa-bars"></i>
+      </button>
+      <nav id="breadcrumb" aria-label="Navegación"></nav>
+      <div class="top-bar-actions">
+        <button class="btn-icon-topbar" id="btnStats" title="Estadísticas">
+          <i class="fas fa-chart-bar"></i>
+        </button>
+        <button class="btn-topbar" id="btnImport">
+          <i class="fas fa-plus-circle"></i> Importar JSON
+        </button>
+      </div>
+    </div>
+
+    <!-- Panel de Estadísticas -->
+    <div id="statsPanel" class="hidden"></div>
+
+    <!-- Barra de Filtros (visible solo con carpeta seleccionada) -->
+    <div id="filterBar" class="hidden">
+      <div class="search-wrap">
+        <i class="fas fa-search search-icon"></i>
+        <input type="search" id="searchInput" placeholder="Buscar recuerdo…" autocomplete="off">
+      </div>
+      <div class="filter-sep"></div>
+      <div id="emotionFilters"></div>
+      <div class="filter-sep"></div>
+      <div class="filter-intensity">
+        <span>Intensidad ≥</span>
+        <input type="range" id="intensitySlider" min="0" max="10" value="0">
+        <span id="intensityLabel">0</span>
+      </div>
+      <div class="filter-sep"></div>
+      <select id="statusFilter" title="Estado">
+        <option value="all">Todos</option>
+        <option value="done">Recapitulados</option>
+        <option value="pending">Pendientes</option>
+      </select>
+      <select id="sortSelect" title="Ordenar por">
+        <option value="manual">Orden manual</option>
+        <option value="title">Por título</option>
+        <option value="intensity">Por intensidad</option>
+        <option value="emotion">Por emoción</option>
+      </select>
+      <button class="btn-clear-filters" id="btnClearFilters" title="Limpiar filtros">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Área de contenido -->
+    <div class="content-area" id="contentArea">
+      <div class="empty-state" style="margin-top:15vh">
+        <div class="empty-state-icon"><i class="fas fa-eye"></i></div>
+        <h2 class="empty-state-title">Recapitulación</h2>
+        <p class="empty-state-sub">Selecciona una Etapa para comenzar el viaje</p>
+      </div>
+    </div>
+
+  </main><!-- /#main -->
+
+</div><!-- /#app -->
+
+
+<!-- ===== MODAL: VISOR ================================= -->
+<div class="modal-overlay" id="viewerModal" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+  <div class="modal-content" style="max-width:780px">
+    <div id="viewImgCont" class="viewer-image-container" style="display:none">
+      <img id="viewImg" class="viewer-img" src="" alt="Imagen del recuerdo">
+    </div>
+    <div class="viewer-info">
+      <div id="viewTitle" class="viewer-title"></div>
+      <div id="viewDesc"  class="viewer-desc"></div>
+      <div class="viewer-meta">
+        <span id="viewEmotion"></span>
+        <span id="viewIntensity"></span>
+      </div>
+      <div id="viewSpotify" style="margin-top:20px"></div>
+      <div id="viewVideo"   style="margin-top:16px"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" id="btnCloseViewer">Cerrar</button>
+      <button class="btn btn-save"   id="btnEditFromViewer">
+        <i class="fas fa-pen"></i> Editar
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== MODAL: EDITOR ================================ -->
+<div class="modal-overlay" id="editorModal" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+  <div class="modal-content" style="max-width:680px">
+    <h2 class="modal-title" id="editorTitle">
+      <i class="fas fa-edit" style="color:var(--accent)"></i> Editar Recuerdo
+    </h2>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="datos">
+        <i class="fas fa-pen-nib"></i> Datos
+      </button>
+      <button class="tab-btn" data-tab="media">
+        <i class="fas fa-music"></i> Multimedia
+      </button>
+    </div>
+
+    <!-- Tab: Datos -->
+    <div id="tab-datos" class="tab-content active">
+      <div class="form-group">
+        <label class="form-label" for="editTitle">Título</label>
+        <input type="text" id="editTitle" class="form-input" placeholder="Nombre del recuerdo…">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="editDesc">Descripción</label>
+        <textarea id="editDesc" class="form-textarea" placeholder="Describe el recuerdo…"></textarea>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label" for="editType">Emoción</label>
+          <select id="editType" class="form-select">
+            <option value="neutro">😐 Neutro</option>
+            <optgroup label="Drenaje">
+              <option value="sufrimiento">😫 Sufrimiento</option>
+              <option value="miedo">😱 Miedo</option>
+              <option value="ira">🤬 Ira</option>
+              <option value="culpa">⛓️ Culpa</option>
+            </optgroup>
+            <optgroup label="Aporte">
+              <option value="gozo">✨ Gozo</option>
+              <option value="poder">🦁 Poder</option>
+              <option value="amor">❤️ Amor</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editIntensity">Intensidad (0–10)</label>
+          <input type="number" id="editIntensity" class="form-input" min="0" max="10"
+                 style="text-align:center;font-weight:bold;color:var(--accent)">
+        </div>
+      </div>
+      <div class="form-group form-check-group">
+        <label class="form-check-label">
+          <input type="checkbox" id="editCompleted">
+          <span class="form-check-text">✅ RECAPITULADO</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="editNotes">Observaciones</label>
+        <textarea id="editNotes" class="form-textarea" placeholder="Notas adicionales…"></textarea>
+      </div>
+    </div>
+
+    <!-- Tab: Multimedia -->
+    <div id="tab-media" class="tab-content">
+      <div class="form-group">
+        <label class="form-label">Imagen del Recuerdo</label>
+        <div id="imgPreview" class="media-preview-box">
+          <span id="imgUploadLabel" style="color:var(--text-muted)">
+            <i class="fas fa-camera"></i> Subir Imagen
+          </span>
+        </div>
+        <button class="btn btn-cancel" id="btnClearImg" style="width:100%;margin-top:4px">
+          <i class="fas fa-times"></i> Quitar Imagen
+        </button>
+        <input type="file" id="eventImgInput" accept="image/*" style="display:none">
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fab fa-spotify" style="color:#1DB954"></i> Spotify
+        </label>
+        <input type="text" id="editSpotify" class="form-input" placeholder="Pega el enlace de Spotify…">
+        <div id="spotifyPreview"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fab fa-youtube" style="color:#ff0000"></i> YouTube
+        </label>
+        <input type="text" id="editVideo" class="form-input" placeholder="Pega el enlace de YouTube…">
+        <div id="videoPreview"></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-cancel" id="btnCloseEditor">Cancelar</button>
+      <button class="btn btn-save"   id="btnSaveEdits">
+        <i class="fas fa-save"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== MODAL: DIALOG PROMPT ========================= -->
+<div class="modal-overlay" id="dialogPrompt" role="dialog" aria-modal="true" aria-labelledby="dpTitle">
+  <div class="modal-content" style="max-width:420px">
+    <div class="dialog-title" id="dpTitle">Escribe un nombre</div>
+    <div id="dpLabel" style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-weight:700"></div>
+    <input type="text" id="dpInput" class="form-input" style="margin-bottom:0">
+    <div class="btn-row">
+      <button class="btn btn-cancel" id="dpCancel">Cancelar</button>
+      <button class="btn btn-save"   id="dpOk">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== MODAL: DIALOG CONFIRM ======================== -->
+<div class="modal-overlay" id="dialogConfirm" role="dialog" aria-modal="true" aria-labelledby="dcTitle">
+  <div class="modal-content" style="max-width:420px;text-align:center">
+    <div class="dialog-confirm-icon" id="dcIcon"></div>
+    <div class="dialog-title" id="dcTitle"></div>
+    <div class="dialog-message" id="dcMessage"></div>
+    <div class="btn-row" style="justify-content:center">
+      <button class="btn btn-cancel" id="dcCancel">Cancelar</button>
+      <button class="btn btn-danger" id="dcOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== TOAST CONTAINER ============================== -->
+<div id="toastContainer" aria-live="polite"></div>
+
+
+<!-- ===== FILE INPUTS (ocultos) ======================== -->
+<input type="file" id="fileInput"    accept=".json"   style="display:none">
+<input type="file" id="bgInput"      accept="image/*" style="display:none">
+<input type="file" id="iconInput"    accept="image/*" style="display:none">
+<input type="file" id="stageBgInput" accept="image/*" style="display:none">
+
+
+<script src="app.js"></script>
+</body>
+</html>
